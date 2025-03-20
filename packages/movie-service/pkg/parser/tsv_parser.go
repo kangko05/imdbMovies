@@ -3,22 +3,22 @@ package parser
 import (
 	"compress/gzip"
 	"encoding/csv"
-	"fmt"
 	"io"
+	"movie-service/internal/models"
 	"os"
 )
 
 // ParseCompressedMovies parses the IMDb title.basics.tsv.gz file and returns movie data
-func ParseCompressedMovies(filePath string) error {
+func ParseCompressedMovies(filePath string) ([]*models.Movie, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer file.Close()
 
 	gzipReader, err := gzip.NewReader(file)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer gzipReader.Close()
 
@@ -28,9 +28,10 @@ func ParseCompressedMovies(filePath string) error {
 
 	_, err = csvReader.Read()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	var movies []*models.Movie
 	for {
 		record, err := csvReader.Read()
 		if err == io.EOF {
@@ -40,8 +41,10 @@ func ParseCompressedMovies(filePath string) error {
 			continue
 		}
 
-		fmt.Println(record)
+		if record[1] == "movie" {
+			movies = append(movies, models.NewMovie(record))
+		}
 	}
 
-	return nil
+	return movies, nil
 }
